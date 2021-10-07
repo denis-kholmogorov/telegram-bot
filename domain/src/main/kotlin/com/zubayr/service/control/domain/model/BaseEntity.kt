@@ -23,7 +23,6 @@ class BaseEntity : Serializable {
     @GenericGenerator(name = "uuid", strategy = "uuid2")
     var id: UUID? = null
 
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is BaseEntity) return false
