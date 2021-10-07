@@ -1,0 +1,35 @@
+server:
+  port: 8080
+
+spring:
+  banner:
+    location: /banner.txt
+  datasource:
+    url: jdbc:postgresql://localhost:5432/test
+    username: postgres
+    password: postgres
+    hikari:
+      validation-timeout: 300000
+      minimum-idle: 1
+      maximum-pool-size: 15
+
+  liquibase:
+    enabled: true
+    drop-first: true
+    change-log: classpath:db.changelog/database-market-changelog.xml
+
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQL10Dialect
+        format_sql: true
+        order_updates: true
+        batch_versioned_data: true
+        jdbc:
+          batch-size: 32
+    open-in-view: false
+
+local.path: "classpath:data"
