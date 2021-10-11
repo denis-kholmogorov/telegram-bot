@@ -4,7 +4,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/test
+    url: jdbc:postgresql://localhost:5432/telegram_bot
     username: postgres
     password: postgres
     hikari:
@@ -13,8 +13,8 @@ spring:
       maximum-pool-size: 15
 
   liquibase:
-    enabled: true
-    drop-first: true
+    enabled: false
+    drop-first: false
     change-log: classpath:db.changelog/database-market-changelog.xml
 
   jpa:

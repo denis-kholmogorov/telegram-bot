@@ -12,9 +12,9 @@ class ControlApplication {
 	companion object {
 		@JvmStatic
 		fun main(args: Array<String>) {
-			//runApplication<ControlApplication>(*args)
-            val botsApi = TelegramBotsApi(DefaultBotSession::class.java)
-            botsApi.registerBot(BotService())
+			runApplication<ControlApplication>(*args)
+            TelegramBotsApi(DefaultBotSession::class.java)
+            .registerBot(BotService())
 		}
 	}
 }

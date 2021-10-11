@@ -1,16 +1,20 @@
 package com.zubayr.service.control.service
 
+import org.springframework.beans.factory.annotation.Value
 import org.telegram.telegrambots.extensions.bots.commandbot.TelegramLongPollingCommandBot
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
-import org.telegram.telegrambots.meta.api.methods.send.SendSticker
-import org.telegram.telegrambots.meta.api.objects.InputFile
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
-import java.io.File
 
 
 class BotService : TelegramLongPollingCommandBot() {
+
+    @Value("\${telegram.bot.token}")
+    private val token: String? = null
+
+    @Value("\${telegram.bot.token}")
+    private val botName: String? = null
 
     val frases = mutableListOf(
         "Матока", "Бананонина!", "Белло!", "Пупай!", "Пара ту", "По тае то пара ту",
@@ -22,11 +26,9 @@ class BotService : TelegramLongPollingCommandBot() {
         "impl/src/main/resources/hello.webp"
     )
 
+    override fun getBotToken() = token
 
-
-    override fun getBotToken() = "2083240655:AAEm_7zF45avmHrQHvT1HuhWNbk4uyvVWZE"
-
-    override fun getBotUsername() = "minion"
+    override fun getBotUsername() = botName
 
     override fun processNonCommandUpdate(update: Update) {
         if(update.hasMessage() && update.message.hasText()) {
@@ -41,7 +43,9 @@ class BotService : TelegramLongPollingCommandBot() {
                     execute(messageOutput.apply { replyMarkup = createButton() })
                 }
                 messageInput.text.startsWith("/bye") -> {
-                    execute(SendSticker(messageInput.chatId.toString(), InputFile(File("impl/src/main/resources/buy.webp"))))
+                  //  execute(SendSticker(messageInput.chatId.toString(), InputFile(File("impl/src/main/resources/buy.webp"))))
+                    messageOutput.chatId = messageInput.chatId.toString()
+                    messageOutput.text = "Hasta la vista! Baby ${messageInput.from.firstName}"
                 }
                 else -> {
                     messageOutput.chatId = messageInput.chatId.toString()
@@ -58,7 +62,10 @@ class BotService : TelegramLongPollingCommandBot() {
                     })
                 }
                 update.callbackQuery.data.startsWith("/bye") -> {
-                    execute(SendSticker(update.getId(), InputFile(File("impl/src/main/resources/buy.webp"))))
+                    execute(SendMessage().apply {
+                        chatId = update.getId()
+                        text = "Hasta la vista! Baby ${update.callbackQuery.message.from.firstName}"
+                    })
                 }
             }
         }

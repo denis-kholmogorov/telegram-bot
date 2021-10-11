@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: telegram-bot
+
+  cloud:
+    kubernetes:
+      config:
+        sources:
+          - name: telegram-bot
+      reload:
+        enabled: true
+
+#management:
+#  endpoint:
+#    restart:
+#      enabled: true
+#    health:
+#      enabled: true
+#    info:
+#      enabled: true
+#    prometheus:
+#      enabled: true
+
+---
+spring:
+  profiles: test, local
+  spring:
+    cloud:
+      kubernetes:
+        enabled: false
+        reload:
+          enabled: false
+
