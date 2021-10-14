@@ -1,9 +1,11 @@
 package com.zubayr.service.control.service
 
-import io.fabric8.kubernetes.client.KubernetesClient
+import com.zubayr.service.control.constants.CONFIG_MAPS
+import com.zubayr.service.control.constants.DEPLOYMENTS
+import com.zubayr.service.control.constants.ONE_MAP
 import org.apache.logging.log4j.kotlin.Logging
-import org.jvnet.hk2.annotations.Service
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Service
 import org.telegram.telegrambots.extensions.bots.commandbot.TelegramLongPollingCommandBot
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
@@ -12,8 +14,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 
 @Service
 class BotService(
-        val kubernetesClient: KubernetesClient,
-        val configMapService: ConfigMapService
+    private val configMapService: ConfigMapService,
+    private val deploymentsService: DeploymentsService
 ) : TelegramLongPollingCommandBot(), Logging {
 
 
@@ -24,8 +26,8 @@ class BotService(
     private val botName: String? = null
 
     val frases = mutableListOf(
-            "Матока", "Бананонина!", "Белло!", "Пупай!", "Пара ту", "По тае то пара ту",
-            "Ти амо пупай!", "Лук ат ту", "Папой, теремика папой? а папой"
+        "Матока", "Бананонина!", "Белло!", "Пупай!", "Пара ту", "По тае то пара ту",
+        "Ти амо пупай!", "Лук ат ту", "Папой, теремика папой? а папой"
     )
 
     override fun getBotToken() = token
@@ -39,16 +41,15 @@ class BotService(
 
             val messageOutput = SendMessage()
             when {
-                messageInput.text.contains("/start") -> {
+                messageInput.text.contains("/hello") -> {
 
                     messageOutput.chatId = messageInput.chatId.toString()
                     messageOutput.text = "Белло! ${messageInput.from.firstName}"
-                    //execute(SendSticker(messageInput.chatId.toString(), InputFile(File(stiker.random()))))
                     execute(messageOutput.apply { replyMarkup = createButton() })
                     logger.info { "answer ${messageOutput.text}" }
                 }
+
                 messageInput.text.startsWith("/bye") -> {
-                    //  execute(SendSticker(messageInput.chatId.toString(), InputFile(File("impl/src/main/resources/buy.webp"))))
                     messageOutput.chatId = messageInput.chatId.toString()
                     messageOutput.text = "Hasta la vista! Baby ${messageInput.from.firstName}"
                     logger.info { "answer ${messageOutput.text}" }
@@ -69,6 +70,26 @@ class BotService(
                         text = frases.random()
                     })
                 }
+                update.callbackQuery.data.startsWith(ONE_MAP) -> {
+                    execute(SendMessage().apply {
+                        chatId = update.getId()
+                        text = configMapService.getConfigMapByName(update.callbackQuery.data)
+                    })
+                }
+                update.callbackQuery.data.startsWith(DEPLOYMENTS) -> {
+                    execute(SendMessage().apply {
+                        chatId = update.getId()
+                        text = "Банана! Держи деплойменты"
+                        replyMarkup = deploymentsService.getDeployments()
+                    })
+                }
+                update.callbackQuery.data.startsWith(CONFIG_MAPS) -> {
+                    execute(SendMessage().apply {
+                        chatId = update.getId()
+                        text = "Матока! Вот все Мапы"
+                        replyMarkup = configMapService.getAllConfigMaps()
+                    })
+                }
                 update.callbackQuery.data.startsWith("/bye") -> {
                     execute(SendMessage().apply {
                         chatId = update.getId()
@@ -81,17 +102,22 @@ class BotService(
 
     private fun createButton(): InlineKeyboardMarkup {
         val inlineKeyboardMarkup = InlineKeyboardMarkup()
-        val buttonSpeak = InlineKeyboardButton().apply {
-            text = "Поболтаем?"
-            callbackData = "/speak"
+        val buttonConfigMap = InlineKeyboardButton().apply {
+            text = "Конфиг мапы"
+            callbackData = CONFIG_MAPS
+        }
+        val buttonDeployment = InlineKeyboardButton().apply {
+            text = "Деплойменты"
+            callbackData = DEPLOYMENTS
         }
         val buttonBye = InlineKeyboardButton().apply {
             text = "Пока"
             callbackData = "/bye"
         }
         val keyboardButtonsRow1 = mutableListOf(
-                buttonSpeak,
-                buttonBye
+            buttonConfigMap,
+            buttonDeployment,
+            buttonBye
         )
         inlineKeyboardMarkup.keyboard = mutableListOf(keyboardButtonsRow1)
         return inlineKeyboardMarkup
