@@ -1,6 +1,7 @@
 package com.zubayr.service.control.resource
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.zubayr.service.control.constants.ONE_MAP
 import org.junit.jupiter.api.Test
 
 import org.junit.jupiter.api.Assertions.*
@@ -16,25 +17,27 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@RunWith(SpringRunner::class)
+//@SpringBootTest
+//@AutoConfigureMockMvc
+//@RunWith(SpringRunner::class)
 internal class DetailsResourceImplTest {
-
-    @Autowired
-    private val mvc: MockMvc? = null
-
-    @Autowired
-    private val objectMapper: ObjectMapper? = null
+//
+//    @Autowired
+//    private val mvc: MockMvc? = null
+//
+//    @Autowired
+//    private val objectMapper: ObjectMapper? = null
 
     @Test
     fun addAll() {
 
-        mvc?.perform(
-            MockMvcRequestBuilders.post("/news")
-                .contentType(MediaType.TEXT_PLAIN))
-            ?.andDo(MockMvcResultHandlers.print())
-            ?.andExpect(MockMvcResultMatchers.status().isOk)
+       ONE_MAP+"sda".also {  println(it.substringAfter(ONE_MAP)) }
+
+//        mvc?.perform(
+//            MockMvcRequestBuilders.post("/news")
+//                .contentType(MediaType.TEXT_PLAIN))
+//            ?.andDo(MockMvcResultHandlers.print())
+//            ?.andExpect(MockMvcResultMatchers.status().isOk)
 
     }
 }

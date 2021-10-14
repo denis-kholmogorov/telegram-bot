@@ -1,14 +1,23 @@
 package com.zubayr.service.control.service
 
+import com.zubayr.service.control.constants.CONFIG_MAPS
+import com.zubayr.service.control.constants.ONE_MAP
+import io.fabric8.kubernetes.client.KubernetesClient
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Service
 import org.telegram.telegrambots.extensions.bots.commandbot.TelegramLongPollingCommandBot
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 
+@Service
+class BotService(
+    val kubernetesClient: KubernetesClient,
+    val configMapService: ConfigMapService
+) : TelegramLongPollingCommandBot() {
 
-class BotService : TelegramLongPollingCommandBot() {
 
     @Value("\${telegram.bot.token}")
     private val token: String? = null
@@ -21,17 +30,12 @@ class BotService : TelegramLongPollingCommandBot() {
         "Ти амо пупай!", "Лук ат ту", "Папой, теремика папой? а папой"
     )
 
-    val stiker = mutableListOf(
-        "impl/src/main/resources/minon.webp",
-        "impl/src/main/resources/hello.webp"
-    )
-
     override fun getBotToken() = token
 
     override fun getBotUsername() = botName
 
     override fun processNonCommandUpdate(update: Update) {
-        if(update.hasMessage() && update.message.hasText()) {
+        if (update.hasMessage() && update.message.hasText()) {
             val messageInput = update.message
             val messageOutput = SendMessage()
             when {
@@ -42,8 +46,16 @@ class BotService : TelegramLongPollingCommandBot() {
                     //execute(SendSticker(messageInput.chatId.toString(), InputFile(File(stiker.random()))))
                     execute(messageOutput.apply { replyMarkup = createButton() })
                 }
+                messageInput.text.contains(CONFIG_MAPS) -> {
+                    messageOutput.chatId = messageInput.chatId.toString()
+                    messageOutput.text = "Матока! Вот все Мапы"
+                    messageOutput.replyMarkup = configMapService.getAllConfigMaps()
+                    //execute(SendSticker(messageInput.chatId.toString(), InputFile(File(stiker.random()))))
+                    execute(messageOutput)
+                }
+
                 messageInput.text.startsWith("/bye") -> {
-                  //  execute(SendSticker(messageInput.chatId.toString(), InputFile(File("impl/src/main/resources/buy.webp"))))
+                    //  execute(SendSticker(messageInput.chatId.toString(), InputFile(File("impl/src/main/resources/buy.webp"))))
                     messageOutput.chatId = messageInput.chatId.toString()
                     messageOutput.text = "Hasta la vista! Baby ${messageInput.from.firstName}"
                 }
@@ -53,12 +65,18 @@ class BotService : TelegramLongPollingCommandBot() {
                     execute(messageOutput)
                 }
             }
-        } else if(update.hasCallbackQuery()){
-            when{
+        } else if (update.hasCallbackQuery()) {
+            when {
                 update.callbackQuery.data.startsWith("/speak") -> {
                     execute(SendMessage().apply {
                         chatId = update.getId()
                         text = frases.random()
+                    })
+                }
+                update.callbackQuery.data.startsWith(ONE_MAP) -> {
+                    execute(SendMessage().apply {
+                        chatId = update.getId()
+                        text = configMapService.getConfigMapByName(update.callbackQuery.data)
                     })
                 }
                 update.callbackQuery.data.startsWith("/bye") -> {

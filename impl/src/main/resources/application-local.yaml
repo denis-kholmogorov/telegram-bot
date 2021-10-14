@@ -33,6 +33,7 @@ spring:
 
 local.path:  classpath:data.xlsx
 
-control:
-  redurants: [на, Приказ, изделие, изделия]
-  matcher: (\№\d*|^\(.*|.*\)$)
+telegram:
+  bot:
+    token: ${TOKEN}
+    name: ${BOT_NAME}
