@@ -1,5 +1,6 @@
 package com.zubayr.service.control.service
 
+import com.zubayr.service.control.service.enum.BotAnswer
 import io.fabric8.kubernetes.client.KubernetesClient
 import org.apache.logging.log4j.kotlin.Logging
 import org.jvnet.hk2.annotations.Service
@@ -23,10 +24,7 @@ class BotService(
     @Value("\${telegram.bot.token}")
     private val botName: String? = null
 
-    val frases = mutableListOf(
-            "Матока", "Бананонина!", "Белло!", "Пупай!", "Пара ту", "По тае то пара ту",
-            "Ти амо пупай!", "Лук ат ту", "Папой, теремика папой? а папой"
-    )
+    val frases = BotAnswer.values()
 
     override fun getBotToken() = token
 
@@ -42,7 +40,7 @@ class BotService(
                 messageInput.text.contains("/start") -> {
 
                     messageOutput.chatId = messageInput.chatId.toString()
-                    messageOutput.text = "Белло! ${messageInput.from.firstName}"
+                    messageOutput.text = BotAnswer.BELLO.answer + " ${messageInput.from.firstName}"
                     //execute(SendSticker(messageInput.chatId.toString(), InputFile(File(stiker.random()))))
                     execute(messageOutput.apply { replyMarkup = createButton() })
                     logger.info { "answer ${messageOutput.text}" }
@@ -50,13 +48,13 @@ class BotService(
                 messageInput.text.startsWith("/bye") -> {
                     //  execute(SendSticker(messageInput.chatId.toString(), InputFile(File("impl/src/main/resources/buy.webp"))))
                     messageOutput.chatId = messageInput.chatId.toString()
-                    messageOutput.text = "Hasta la vista! Baby ${messageInput.from.firstName}"
+                    messageOutput.text = BotAnswer.HASTA_LA_VISTA.answer + " ${messageInput.from.firstName}"
                     logger.info { "answer ${messageOutput.text}" }
 
                 }
                 else -> {
                     messageOutput.chatId = messageInput.chatId.toString()
-                    messageOutput.text = frases.random()
+                    messageOutput.text = frases.random().answer
                     execute(messageOutput)
                     logger.info { "answer ${messageOutput.text}" }
                 }
@@ -66,13 +64,13 @@ class BotService(
                 update.callbackQuery.data.startsWith("/speak") -> {
                     execute(SendMessage().apply {
                         chatId = update.getId()
-                        text = frases.random()
+                        text = frases.random().answer
                     })
                 }
                 update.callbackQuery.data.startsWith("/bye") -> {
                     execute(SendMessage().apply {
                         chatId = update.getId()
-                        text = "Hasta la vista! Baby ${update.callbackQuery.message.from.firstName}"
+                        text = BotAnswer.HASTA_LA_VISTA.answer + " ${update.callbackQuery.message.from.firstName}"
                     })
                 }
             }
