@@ -19,7 +19,15 @@ class DeploymentsService(
         keyboard = mutableListOf(createListDeployments())
     }
 
-    fun getOneDeployment() = ""
+    fun getOneDeployment(name: String) = name.let {
+        val configDeployments = it.substringAfter(ONE_DEPLOYMENT)
+        kubernetesClient
+            .apps()
+            .deployments()
+            .withName(configDeployments)
+            .rolling()
+            .restart()
+    }
 
     private fun createListDeployments() = kubernetesClient
         .apps()

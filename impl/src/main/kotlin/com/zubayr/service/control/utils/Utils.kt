@@ -7,3 +7,13 @@ fun InlineKeyboardButton.setButton(textButton: String, path: String) = this.appl
     text = textButton
     callbackData = path
 }
+
+fun MutableList<InlineKeyboardButton>.addButtonKubernetes(map: Map<String, String>) = this.also {
+
+    map.forEach { (t, d) ->
+        it.add(InlineKeyboardButton().apply {
+            text = t
+            callbackData = d
+        })
+    }
+}
