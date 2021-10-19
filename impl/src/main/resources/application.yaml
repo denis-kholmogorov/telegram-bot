@@ -36,3 +36,5 @@ telegram:
   bot:
     token: ${TOKEN}
     name: ${BOT_NAME}
+
+available-names: ${AVAILABLE_NAME}

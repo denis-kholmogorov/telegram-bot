@@ -1,9 +1,10 @@
 package com.zubayr.service.control.service
 
-import io.fabric8.kubernetes.client.KubernetesClient
+import com.zubayr.service.control.constants.*
+import com.zubayr.service.control.utils.addButtonKubernetes
 import org.apache.logging.log4j.kotlin.Logging
-import org.jvnet.hk2.annotations.Service
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Service
 import org.telegram.telegrambots.extensions.bots.commandbot.TelegramLongPollingCommandBot
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
@@ -12,8 +13,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 
 @Service
 class BotService(
-        val kubernetesClient: KubernetesClient,
-        val configMapService: ConfigMapService
+    private val configMapService: ConfigMapService,
+    private val deploymentsService: DeploymentsService
 ) : TelegramLongPollingCommandBot(), Logging {
 
 
@@ -23,9 +24,12 @@ class BotService(
     @Value("\${telegram.bot.token}")
     private val botName: String? = null
 
+    @Value("\${available-names}")
+    private val names: List<String> = ArrayList()
+
     val frases = mutableListOf(
-            "Матока", "Бананонина!", "Белло!", "Пупай!", "Пара ту", "По тае то пара ту",
-            "Ти амо пупай!", "Лук ат ту", "Папой, теремика папой? а папой"
+        "Матока", "Бананонина!", "Белло!", "Пупай!", "Пара ту", "По тае то пара ту",
+        "Ти амо пупай!", "Лук ат ту", "Папой, теремика папой? а папой"
     )
 
     override fun getBotToken() = token
@@ -34,39 +38,60 @@ class BotService(
 
     override fun processNonCommandUpdate(update: Update) {
         if (update.hasMessage() && update.message.hasText()) {
+
             val messageInput = update.message
             logger.info { "processing nonCommandUpdate $messageInput" }
-
             val messageOutput = SendMessage()
+
             when {
-                messageInput.text.contains("/start") -> {
+                messageInput.text.contains("/hello") -> {
 
                     messageOutput.chatId = messageInput.chatId.toString()
                     messageOutput.text = "Белло! ${messageInput.from.firstName}"
-                    //execute(SendSticker(messageInput.chatId.toString(), InputFile(File(stiker.random()))))
-                    execute(messageOutput.apply { replyMarkup = createButton() })
-                    logger.info { "answer ${messageOutput.text}" }
+                    execute(messageOutput.apply { replyMarkup = createButton(messageInput.from.userName) })
+                    logger.info { "processNonCommandUpdate() /hello - answer ${messageOutput.text}" }
                 }
+
                 messageInput.text.startsWith("/bye") -> {
-                    //  execute(SendSticker(messageInput.chatId.toString(), InputFile(File("impl/src/main/resources/buy.webp"))))
                     messageOutput.chatId = messageInput.chatId.toString()
                     messageOutput.text = "Hasta la vista! Baby ${messageInput.from.firstName}"
-                    logger.info { "answer ${messageOutput.text}" }
+                    logger.info { "processNonCommandUpdate() /bye - answer ${messageOutput.text}" }
 
                 }
                 else -> {
                     messageOutput.chatId = messageInput.chatId.toString()
                     messageOutput.text = frases.random()
                     execute(messageOutput)
-                    logger.info { "answer ${messageOutput.text}" }
+                    logger.info { "processNonCommandUpdate() else - answer ${messageOutput.text}" }
                 }
             }
         } else if (update.hasCallbackQuery()) {
             when {
-                update.callbackQuery.data.startsWith("/speak") -> {
+                update.callbackQuery.data.startsWith(ONE_MAP) -> {
                     execute(SendMessage().apply {
                         chatId = update.getId()
-                        text = frases.random()
+                        text = configMapService.getConfigMapByName(update.callbackQuery.data)
+                    })
+                }
+                update.callbackQuery.data.startsWith(CONFIG_MAPS) -> {
+                    execute(SendMessage().apply {
+                        chatId = update.getId()
+                        text = "Матока! Вот все Мапы"
+                        replyMarkup = configMapService.getAllConfigMaps()
+                    })
+                }
+                update.callbackQuery.data.startsWith(DEPLOYMENTS) -> {
+                    execute(SendMessage().apply {
+                        chatId = update.getId()
+                        text = "Банана! Держи деплойменты"
+                        replyMarkup = deploymentsService.getDeployments()
+                    })
+                }
+                update.callbackQuery.data.startsWith(ONE_DEPLOYMENT) -> {
+                    execute(SendMessage().apply {
+                        chatId = update.getId()
+                        text = "Перезапуск деплоймента ${update.callbackQuery.data.substringAfter(ONE_DEPLOYMENT)}"
+                        deploymentsService.getOneDeployment(update.callbackQuery.data)
                     })
                 }
                 update.callbackQuery.data.startsWith("/bye") -> {
@@ -79,23 +104,26 @@ class BotService(
         }
     }
 
-    private fun createButton(): InlineKeyboardMarkup {
+    private fun createButton(name: String): InlineKeyboardMarkup {
         val inlineKeyboardMarkup = InlineKeyboardMarkup()
-        val buttonSpeak = InlineKeyboardButton().apply {
-            text = "Поболтаем?"
-            callbackData = "/speak"
-        }
+
         val buttonBye = InlineKeyboardButton().apply {
             text = "Пока"
             callbackData = "/bye"
         }
-        val keyboardButtonsRow1 = mutableListOf(
-                buttonSpeak,
-                buttonBye
-        )
-        inlineKeyboardMarkup.keyboard = mutableListOf(keyboardButtonsRow1)
+        val keyboardButtonsRow = mutableListOf(buttonBye)
+        if(names.contains(name)){
+           keyboardButtonsRow.addButtonKubernetes(
+               mapOf(
+                   "Конфиг мапы" to CONFIG_MAPS,
+                   "Деплойменты" to DEPLOYMENTS
+               )
+           )
+        }
+        inlineKeyboardMarkup.keyboard = mutableListOf(keyboardButtonsRow)
         return inlineKeyboardMarkup
     }
+
 
     private fun Update.getId() = this.callbackQuery.message.chatId.toString()
 }
